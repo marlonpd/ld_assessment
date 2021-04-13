@@ -8,6 +8,7 @@ use App\Http\Requests\SendInviteRequest;
 use App\Models\User;
 use App\Models\InvitedEmail;
 use Symfony\Component\HttpFoundation\Response;
+use App\Event\UserInvited;
 
 class InviteUserController extends Controller
 {
@@ -31,21 +32,14 @@ class InviteUserController extends Controller
         $invitedUser->code =$this->generateRandomString();
         $invitedUser->save();
 
-        $toName = $request->email;
-        $toEmail = $request->email;
-        $fromEmail = config('config.fromEmail');
-        $link = config('config.domain') . '/register?code=' . $invitedUser->code;
-        $data = array(
-            'link' => $link,
-            'email' => $toEmail
-        );
+        $data = [
+            'toName' => $request->email,
+            'toEmail' => $request->email, 
+            'code'  => $invitedUser->code
+        ];
 
-        \Mail::send('mails.user_invite', $data, function($message) use ($toName, $toEmail, $fromEmail) {
-            $message->to($toEmail, $toName)
-            ->subject('Invitation link');
-            $message->from($fromEmail , 'Invitation Link');
-        });
-
+        event(new UserInvited($data));
+        
         return response()->json(['message' => 'Successfully sent an invitation link.']);
     }
 

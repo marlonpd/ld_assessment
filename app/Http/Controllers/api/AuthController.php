@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\InvitedEmail;
 use JWTAuth;
 use Symfony\Component\HttpFoundation\Response;
+use App\Event\UserRegistered;
 
 class AuthController extends Controller
 {
@@ -84,19 +85,14 @@ class AuthController extends Controller
 
         $user = User::create($payload);
 
-        $toName = $userInvited->email;
-        $toEmail = $userInvited->email;
-        $fromEmail = config('config.fromEmail');
-        $data = array(
-            'pin' => $generatedPin,
-            'email' => $toEmail,
-        );
 
-        \Mail::send('mails.user_pin', $data, function($message) use ($toName, $toEmail, $fromEmail) {
-            $message->to($toEmail, $toName)
-            ->subject('User Registration PIN');
-            $message->from($fromEmail , 'User Registration PIN');
-        });
+        $data = [
+            'toName' => $userInvited->email,
+            'toEmail' => $userInvited->email, 
+            'pin'  => $generatedPin
+        ];
+
+        event(new UserRegistered($data));
 
         if ($user) {
             return response()->json(['message' => 'To confirm, a 6 digit pin has been sent to your email.']);
