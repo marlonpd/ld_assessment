@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Symfony\Component\HttpFoundation\Response;
 use JWTAuth;
+use Image;
 
 class UserController extends Controller
 {
@@ -17,15 +18,35 @@ class UserController extends Controller
      * @return void
      */
 
-    public function updateUser(Request $request) 
+    public function updateUser(UpdateUserRequest $request) 
     {   
         $id = JWTAuth::user()->id;
+        $MAX_IMAGE_HEIGHT = config('config.imageMaxDimension.height');
+        $MAX_IMAGE_WIDTH = config('config.imageMaxDimension.width');
+        $AVATAR_PATH = 'avatars/';
 
+        $imageName = "";
+
+        if ($request->avatar) {
+             $imageName = $AVATAR_PATH.time().time().'.'.$request->avatar->extension();  
+             $avatar = $request->file('avatar');
+             $filePath = public_path('/');   
+
+             $img = Image::make($avatar->path());
+             $img->resize($MAX_IMAGE_HEIGHT, $MAX_IMAGE_WIDTH , function ($const) {
+                $const->aspectRatio();
+            })->save($filePath.'/'.$imageName);
+        }
+       
         $payload = [
             'name' => $request->name,
             'user_name' => $request->user_name,
             'password'  => bcrypt($request->password),
         ];
+
+        if ($imageName !== "") {
+            $payload['avatar'] = $imageName;
+        }
 
         $user = User::where('id', $id)->update($payload);  
 

@@ -7,5 +7,9 @@ return [
    'roles' => [
        'admin' => 'admin',
        'user' => 'user',
-    ]
+   ], 
+   'imageMaxDimension' => [
+       'height' => 250,
+       'width'  => 250
+   ]
 ];
